@@ -46,19 +46,24 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Start ThingsBoard using Docker Compose
+      - name: Start ThingsBoard using Docker Compose (Postgres + Kafka)
         run: |
           cd docker
-          docker compose up -d
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.postgres.yml \
+            -f docker-compose.kafka.yml \
+            up -d
           echo "=== docker compose ps ==="
           docker compose ps
+
 
       - name: Wait for ThingsBoard to start (up to 15 minutes)
         run: |
           # ThingsBoard est lent au premier démarrage, surtout en CI
           for i in {1..180}; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 || true)
-            if echo "$code" | grep -qE "200|302|401"; then
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost || true)
+            if echo "$code" | grep -qE "200|302|401|404"; then
               echo "ThingsBoard is responding (HTTP $code)"
               exit 0
             fi
@@ -69,7 +74,7 @@ jobs:
           exit 1
 
       - name: Debug containers status (always)
-        if: always()
+        if: always()  
         run: |
           cd docker
           echo "=== docker compose ps ==="
