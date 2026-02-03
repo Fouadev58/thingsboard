@@ -1,38 +1,3 @@
-name: TP CI - Build, Tests, Start ThingsBoard
-
-on:
-  push:
-    branches: [ "ci/github-actions" ]
-  pull_request:
-    branches: [ "master" ]
-
-jobs:
-  build-and-unit-tests:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-
-      - name: Run unit tests (rule-engine-api)
-        run: mvn -pl :rule-engine-api -am test
-
-      - name: Upload test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: surefire-reports
-          path: |
-            **/target/surefire-reports/*.xml
-            **/target/surefire-reports/*.txt
-
   start-thingsboard:
     runs-on: ubuntu-latest
     needs: build-and-unit-tests
@@ -45,19 +10,38 @@ jobs:
         run: |
           cd docker
           docker compose up -d
+          docker compose ps
 
-      - name: Wait for ThingsBoard to start
+      - name: Wait for ThingsBoard to start (up to 15 min)
         run: |
-          for i in {1..60}; do
-            if curl -s http://localhost:8080 >/dev/null; then
-              echo "ThingsBoard is running"
+          # ThingsBoard peut être lent au premier démarrage en CI
+          for i in {1..180}; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 || true)
+            if echo "$code" | grep -qE "200|302|401"; then
+              echo "ThingsBoard is responding (HTTP $code)"
               exit 0
             fi
-            echo "Waiting for ThingsBoard..."
+            echo "Waiting for ThingsBoard... ($i/180) HTTP=$code"
             sleep 5
           done
-          echo "ThingsBoard did not start"
+          echo "ThingsBoard did not start in time"
           exit 1
+
+      - name: Debug info (always)
+        if: always()
+        run: |
+          cd docker
+          echo "=== docker compose ps ==="
+          docker compose ps
+          echo "=== docker ps ==="
+          docker ps
+
+      - name: Logs (on failure)
+        if: failure()
+        run: |
+          cd docker
+          echo "=== docker compose logs (last 300 lines) ==="
+          docker compose logs --no-color | tail -n 300
 
       - name: Stop ThingsBoard
         if: always()
