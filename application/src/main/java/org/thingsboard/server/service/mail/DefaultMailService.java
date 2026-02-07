@@ -223,6 +223,19 @@ public class DefaultMailService implements MailService {
                 throw new RateLimitExceededException(LimitedApi.EMAILS);
             }
             try {
+                for (String to : tbEmail.getTo().split("\\s*,\\s*")) {
+                    MailService.validateEmail(to);
+                }
+                if (!StringUtils.isBlank(tbEmail.getCc())) {
+                    for (String cc : tbEmail.getCc().split("\\s*,\\s*")) {
+                        MailService.validateEmail(cc);
+                    }
+                }
+                if (!StringUtils.isBlank(tbEmail.getBcc())) {
+                    for (String bcc : tbEmail.getBcc().split("\\s*,\\s*")) {
+                        MailService.validateEmail(bcc);
+                    }
+                }
                 MimeMessage mailMsg = javaMailSender.createMimeMessage();
                 boolean multipart = (tbEmail.getImages() != null && !tbEmail.getImages().isEmpty());
                 MimeMessageHelper helper = new MimeMessageHelper(mailMsg, multipart, "UTF-8");
@@ -373,7 +386,8 @@ public class DefaultMailService implements MailService {
 
     private void sendMail(JavaMailSenderImpl mailSender, String mailFrom, String email,
                           String subject, String message, long timeout) throws ThingsboardException {
-        try {
+        MailService.validateEmail(email);
+        try {   
             MimeMessage mimeMsg = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMsg, UTF_8);
             helper.setFrom(mailFrom);

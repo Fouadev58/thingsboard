@@ -23,6 +23,9 @@ import org.thingsboard.server.common.data.ApiUsageStateValue;
 import org.thingsboard.server.common.data.exception.ThingsboardException;
 import org.thingsboard.server.common.data.id.CustomerId;
 import org.thingsboard.server.common.data.id.TenantId;
+import org.thingsboard.server.common.data.exception.ThingsboardErrorCode;
+import java.util.regex.Pattern;
+
 
 public interface MailService {
 
@@ -55,5 +58,14 @@ public interface MailService {
     void testConnection(TenantId tenantId) throws Exception;
 
     boolean isConfigured(TenantId tenantId);
+
+    Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+
+    static void validateEmail(String email) throws ThingsboardException {
+        if (email == null || email.isBlank() || !EMAIL_PATTERN.matcher(email).matches()) {
+            throw new ThingsboardException("Invalid email address: " + email, ThingsboardErrorCode.GENERAL);
+        }
+    }
+
 
 }
