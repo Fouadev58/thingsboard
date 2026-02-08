@@ -28,6 +28,11 @@ jobs:
         run: |
           mvn -pl :rule-engine-api -am test
 
+      - name: Build and run application LayeredArchitectureTest
+        run: |
+          mvn -pl application -am test -DskipTests
+          mvn -pl application -Dtest=LayeredArchitectureTest test
+
       - name: Upload Surefire test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -74,7 +79,7 @@ jobs:
           exit 1
 
       - name: Debug containers status (always)
-        if: always()  
+        if: always()
         run: |
           cd docker
           echo "=== docker compose ps ==="
