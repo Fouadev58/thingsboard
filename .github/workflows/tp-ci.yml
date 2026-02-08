@@ -30,8 +30,9 @@ jobs:
 
       - name: Build and run application LayeredArchitectureTest
         run: |
-          mvn -pl application -am test -DskipTests
-          mvn -pl application -Dtest=LayeredArchitectureTest test
+          mvn -pl application -am test \
+          -Dtest=LayeredArchitectureTest \
+          -Dsurefire.failIfNoSpecifiedTests=false
 
       - name: Upload Surefire test reports
         if: always()
