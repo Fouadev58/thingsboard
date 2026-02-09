@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.thingsboard.server.common.data.exception.ThingsboardException;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+// trigger ci pipeline
 public class MailServiceTest {
 
     @Test
